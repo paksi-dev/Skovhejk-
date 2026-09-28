@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>SKOVHEJK</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07100b;color:#eef5ec;font-family:Arial,sans-serif}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+.screen{position:fixed;inset:0;display:none;background:#07100b}
+.screen.active{display:block}
+#lobby{background:
+ radial-gradient(circle at 50% 42%,rgba(77,117,64,.23),transparent 34%),
+ linear-gradient(#061008,#102014 52%,#050b07)}
+.lobbyPanel{position:absolute;inset:0;overflow:hidden}
+.lobbyFog,.lobbyFog:before,.lobbyFog:after{position:absolute;inset:-20%;content:"";pointer-events:none}
+.lobbyFog{background:radial-gradient(ellipse at 50% 65%,rgba(183,210,174,.10),transparent 42%);filter:blur(18px)}
+.lobbyFog:before{background:repeating-linear-gradient(170deg,transparent 0 90px,rgba(210,230,200,.035) 100px 145px);animation:fog 16s linear infinite}
+.lobbyFog:after{background:radial-gradient(circle at 15% 30%,rgba(130,170,105,.13),transparent 10%),radial-gradient(circle at 85% 25%,rgba(130,170,105,.10),transparent 12%)}
+@keyframes fog{to{transform:translateX(12%)}}
+.logo{position:absolute;top:8%;left:50%;transform:translateX(-50%);text-align:center;z-index:2}
+.logo h1{font-size:clamp(38px,8vw,90px);letter-spacing:12px;margin:0;text-shadow:0 5px 25px #000}
+.logo p{letter-spacing:4px;opacity:.72}
+.lobbyCenter{position:absolute;inset:0;display:grid;place-items:center;z-index:2}
+.playBtn{width:220px;height:90px;border:2px solid #8cae7d;background:rgba(13,29,16,.78);font-size:32px;letter-spacing:7px;border-radius:12px;box-shadow:0 0 35px rgba(130,180,110,.18)}
+.playBtn:active,.sideBtn:active{transform:scale(.97)}
+.sideBtn{position:absolute;z-index:3;width:150px;height:58px;padding:10px 12px;background:rgba(8,20,11,.78);border:1px solid #50664a;border-radius:9px;letter-spacing:2px;line-height:1.15}
+#communityBtn{left:25px;bottom:24px}
+#skinBtn{left:25px;bottom:94px}
+#editorLobbyBtn{left:25px;bottom:164px}
+#accountBtn{right:25px;bottom:94px}
+#leaderboardBtn{right:25px;bottom:164px}
+#settingsBtn{position:absolute;right:25px;bottom:24px;z-index:3;background:rgba(8,20,11,.8);border:1px solid #50664a;border-radius:9px;padding:13px 18px;font-size:22px}
+
+
+#mapSelect{background:
+ radial-gradient(circle at 50% 43%,rgba(91,126,76,.25),transparent 38%),
+ linear-gradient(145deg,#071008,#152419 55%,#071008);overflow:hidden}
+.levelTop{position:absolute;left:22px;right:22px;top:18px;display:grid;grid-template-columns:70px 1fr 70px;align-items:center;z-index:3}
+.levelTop h2{text-align:center;letter-spacing:5px;font-size:clamp(18px,3vw,30px);margin:0}
+.levelBack{width:52px;height:45px;background:rgba(7,18,9,.78);border:1px solid #526a4c;border-radius:9px;font-size:25px}
+.levelCard{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(620px,72vw);min-height:370px;background:rgba(7,17,9,.82);border:1px solid #607658;border-radius:18px;text-align:center;padding:28px 30px;box-shadow:0 18px 55px #0008}
+.levelNumber{position:absolute;right:22px;top:18px;font-size:18px;opacity:.55}
+.levelIcon{font-size:76px;line-height:1;margin-top:4px;filter:drop-shadow(0 8px 12px #000)}
+.levelCard h1{font-size:clamp(27px,5vw,48px);letter-spacing:4px;margin:18px 0 8px}
+.levelCard p{opacity:.65;letter-spacing:2px}
+.levelArrow{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:70px;height:110px;background:rgba(7,18,9,.62);border:1px solid #526a4c;border-radius:12px;font-size:70px;line-height:70px;color:#c9d9c1}
+.levelArrow.left{left:4%}.levelArrow.right{right:4%}
+.levelDots{display:flex;justify-content:center;gap:8px;margin:22px 0 20px;flex-wrap:wrap}
+.levelDots span{width:9px;height:9px;border-radius:50%;background:#4b5e47;display:block}
+.levelDots span.active{background:#d5c765;transform:scale(1.35)}
+.levelPlay{padding:14px 30px;border-radius:9px;background:#263b25;border:1px solid #718764;letter-spacing:2px}
+.levelPlay:active,.levelArrow:active,.levelBack:active{transform:scale(.97)}
+@media(max-width:700px){
+ .levelCard{width:72vw;min-height:320px;padding:22px 16px}
+ .levelIcon{font-size:58px}.levelArrow{width:48px;height:85px;font-size:55px}
+ .levelArrow.left{left:2%}.levelArrow.right{right:2%}
+}
+
+#game{background:#030805}
+body.brightForest #game{background:#132116}
+#gameCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:5;width:150px;padding:0;background:transparent;border:0;border-radius:0}.hud b{letter-spacing:2px}.progress{position:relative;height:8px;width:150px;background:rgba(24,37,26,.72);border-radius:5px;overflow:hidden}.progress i{display:block;height:100%;background:#c7b95d;width:0;transition:width .12s linear}.hud #posterText{position:absolute;left:0;top:0;width:100%;height:8px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;line-height:8px;color:#fff;z-index:2;text-shadow:0 1px 2px #000;pointer-events:none}
+.gameButtons{position:absolute;right:15px;top:12px;z-index:5;display:flex;gap:7px}
+.smallBtn{background:rgba(3,10,5,.72);border:1px solid rgba(180,220,165,.25);border-radius:9px;padding:9px 12px}
+#joystick{display:none;position:absolute;left:25px;bottom:25px;width:145px;height:145px;border-radius:50%;background:rgba(200,230,200,.08);border:2px solid rgba(200,230,200,.18);z-index:6;touch-action:none}
+#stick{position:absolute;width:58px;height:58px;left:41px;top:41px;border-radius:50%;background:rgba(194,215,184,.35);border:2px solid rgba(220,240,210,.45)}
+#energyWrap{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:min(260px,32vw);height:9px;z-index:6;background:rgba(23,35,25,.60);border:1px solid rgba(220,235,210,.24);border-radius:7px;overflow:hidden;opacity:.6;pointer-events:none}
+#energyLabel{display:none}
+.energyBar{height:100%;width:100%;border-radius:6px;overflow:hidden}
+#energyFill{display:block;height:100%;width:100%;background:#d0c765;border-radius:6px;transition:width .08s linear}
+#boost{display:none;position:absolute;right:30px;bottom:38px;width:105px;height:65px;border-radius:50%;background:rgba(160,185,130,.14);border:2px solid rgba(190,220,165,.3);z-index:6}
+#message{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;text-align:center;pointer-events:none;font-size:clamp(30px,6vw,70px);letter-spacing:7px;text-shadow:0 5px 25px #000;opacity:0;transition:.25s}
+#message.show{opacity:1}
+
+.panel{position:absolute;inset:0;background:linear-gradient(135deg,#08120a,#111d12);overflow:auto;padding:35px}
+.panel h2{text-align:center;letter-spacing:5px;margin-top:5px}
+.back{position:fixed;left:20px;top:20px;background:#172519;border:1px solid #53694f;border-radius:8px;padding:10px 16px;z-index:10}
+.cards{max-width:1000px;margin:40px auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
+.card{background:#0d1a0f;border:1px solid #3f573d;border-radius:12px;padding:18px;min-height:145px;box-shadow:0 8px 30px #0005}
+.card h3{margin-top:0}.card p{opacity:.7;line-height:1.4}.card button{background:#263a25;padding:9px 13px;border-radius:7px}
+
+
+#editor{background:#050906}
+.editorTop{position:absolute;left:0;right:0;top:0;height:55px;background:#0b160d;border-bottom:1px solid #344634;z-index:8;display:flex;align-items:center;gap:8px;padding:7px}
+.editorTop button{background:#172719;border:1px solid #3f553d;border-radius:7px;padding:8px 11px}.editorTop button:disabled{opacity:.35;cursor:not-allowed}
+#editorTestBtn{background:#29482a;border-color:#718764;font-weight:700}
+#testStopBtn{background:#4a2828;border-color:#8d5b5b;font-weight:700}
+#editorChooser{position:fixed;inset:0;background:rgba(3,8,5,.92);z-index:80;display:none;align-items:center;justify-content:center;padding:24px}
+#editorChooser.active{display:flex}.editorChooserBox{width:min(760px,92vw);max-height:84vh;overflow:auto;background:#0b160d;border:1px solid #53694f;border-radius:14px;padding:22px;box-shadow:0 20px 60px #0009}.editorChooserBox h2{text-align:center;letter-spacing:4px;margin:0 0 8px}.editorChooserBox>p{text-align:center;opacity:.7;margin:0 0 18px}.editorChooserGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.editorChoice{background:#172719;border:1px solid #42583f;border-radius:9px;padding:14px;text-align:left;min-height:100px}.editorChoice strong{display:block;font-size:16px;margin-bottom:7px}.editorChoice small{opacity:.68}.editorChoice.new{border-color:#78966e}.editorChooserClose{display:block;margin:16px auto 0;background:#172719;border:1px solid #53694f;border-radius:8px;padding:10px 18px}
+#editorCanvas{position:absolute;left:0;top:55px;right:235px;bottom:0;width:calc(100% - 235px);height:calc(100% - 55px);z-index:2;touch-action:none;pointer-events:auto}
+.tools{position:absolute;right:0;top:55px;bottom:0;width:235px;background:#0b150d;border-left:1px solid #344634;padding:12px;z-index:9;overflow:auto}
+.tools h3{margin:5px 0 12px}.toolgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.toolgrid button{padding:12px 5px;background:#172719;border:1px solid #3d543b;border-radius:7px;font-size:13px}.toolgrid button.sel{outline:2px solid #b5c87a}
+.themeTools{margin-top:12px;padding-top:10px;border-top:1px solid #334632}.themeTools h4{margin:0 0 8px;font-size:13px}.themeGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}.themeGrid button{padding:11px 5px;background:#172719;border:1px solid #4a6047;border-radius:7px;font-size:12px}.themeGrid button.sel{box-shadow:0 0 0 2px rgba(168,201,155,.18);border-color:#a8c99b}.themeGrid button[data-theme="winter"]{border-color:#6f8fa0}.themeGrid button[data-theme="autumn"]{border-color:#8d6a43}.themeGrid button[data-theme="dead"]{border-color:#66534a}
+.editorSettingsBtn{margin-left:auto;padding:8px 11px;background:#172719;border:1px solid #4d6549;border-radius:7px}
+.editorSettings{position:absolute;right:245px;top:55px;width:260px;background:#0d180f;border:1px solid #52674d;border-radius:10px;padding:14px;z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.editorSettings.hidden{display:none}.editorSettings h3{margin:0 0 12px}.settingRow{margin:12px 0}.settingRow label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}.settingRow input[type=range]{width:100%}
+@media (hover:none) and (pointer:coarse), (max-width:700px){#joystick,#boost{display:block}.editorSettings{right:10px;width:240px}}
+
+
+
+.editorInfo{margin-top:15px;background:#101c12;border:1px solid #334632;border-radius:7px;padding:10px;font-size:12px;line-height:1.45}
+
+#win{background:radial-gradient(circle,#243e20,#071008 65%);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:50}
+#win.active{display:flex}
+#win h1{font-size:clamp(45px,10vw,100px);letter-spacing:12px;margin:0;text-align:center}
+#win p{font-size:20px;opacity:.75}
+.winBtns{display:flex;gap:10px}.winBtns button{background:#172719;border:1px solid #718764;border-radius:8px;padding:13px 20px}
+
+@media(max-width:700px){
+ .logo h1{letter-spacing:5px}.logo p{font-size:10px}
+ .sideBtn{width:135px;height:54px;padding:9px 8px;font-size:12px}
+ #skinBtn{left:14px;bottom:82px}#communityBtn{left:14px;bottom:18px}#editorLobbyBtn{left:14px;bottom:146px}
+ #accountBtn{right:14px;bottom:82px}#leaderboardBtn{right:14px;bottom:146px}
+ #settingsBtn{right:14px;bottom:18px}
+ #energyWrap{right:15px;bottom:108px;width:165px}
+ #editorCanvas{right:165px;width:calc(100% - 165px)}
+ .tools{width:165px}
+ .toolgrid{grid-template-columns:1fr}
+}
+
+.skinCards{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));max-width:1100px}.skinCard{text-align:center}.skinPreview{height:95px;display:grid;place-items:center;font-size:55px;border-radius:12px;background:radial-gradient(circle,#263d28,#0a130b);margin-bottom:12px;border:1px solid #334a32}.skinCard button{margin-top:4px}.rangerPreview{filter:saturate(.9)}.hoodPreview{filter:grayscale(.35)}.scoutPreview{filter:sepia(.45)}.rainPreview{filter:hue-rotate(170deg)}.ghostPreview{filter:grayscale(1)}
+.skinPanel{overflow:auto}.skinHint{text-align:center;opacity:.7;margin:-8px 0 18px;font-size:13px}.skinIconGrid{width:min(720px,92vw);margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.skinIcon{height:92px;border:1px solid #334a32;border-radius:15px;background:rgba(10,22,12,.72);display:flex;align-items:center;justify-content:center;padding:6px;transition:.15s}.skinIcon:active{transform:scale(.96)}.skinIcon.selected{border-color:#a8c99b;background:rgba(45,70,45,.72);box-shadow:0 0 0 2px rgba(168,201,155,.18)}.skinArt{position:relative;width:70px;height:70px;display:grid;place-items:center;border-radius:18px;background:radial-gradient(circle at 50% 35%,#344c36,#0c160d);overflow:hidden}.skinArt b{font-size:38px;line-height:1;filter:drop-shadow(0 2px 2px #0008)}.skinArt i{position:absolute;right:6px;bottom:4px;font-style:normal;font-size:18px}.selectedSkinName{text-align:center;min-height:20px;margin:12px 0 4px;font-size:13px;letter-spacing:1px;opacity:.85}@media(max-width:600px){.skinIconGrid{grid-template-columns:repeat(5,1fr);gap:7px}.skinIcon{height:72px;border-radius:11px}.skinArt{width:54px;height:54px;border-radius:13px}.skinArt b{font-size:29px}.skinArt i{font-size:13px;right:3px;bottom:2px}}
+.accountWrap{max-width:520px;margin:45px auto}.accountBox{display:flex;flex-direction:column;gap:10px}.accountBox input{width:100%;padding:12px;background:#09120b;color:#eef5ec;border:1px solid #3f573d;border-radius:8px;outline:none}.accountBox button{background:#263a25;padding:11px 14px;border-radius:8px;border:1px solid #50664a}.accountBox hr{width:100%;border:0;border-top:1px solid #30422f;margin:14px 0}.accountMsg{min-height:20px;color:#d7c862}.verified{display:inline-block;padding:3px 7px;border-radius:999px;background:#2b3e28;border:1px solid #6d855e;font-size:11px;letter-spacing:1px}.creatorLine{opacity:.7;font-size:13px}
+.autumnBadge{color:#d9b86a}
+#accountLoggedOut button,#accountLoggedIn button{min-height:44px}
+.brightForest .panel{background:linear-gradient(135deg,#16271a,#243b24)}
+.brightForest #settings{background:#152519}
+
+</style>
+</head>
+<body>
+
+<section id="lobby" class="screen active">
+  <div class="lobbyPanel">
+    <div class="lobbyFog"></div>
+    <div class="logo">
+      <h1>SKOVHEJK</h1>
+      </div>
+    <button class="sideBtn" id="skinBtn">👤 SKINS</button>
+    <button class="sideBtn" id="communityBtn">🗺 ALLE BANER</button>
+    <button class="sideBtn" id="editorLobbyBtn">✏️ EDITOR</button>
+    <button class="sideBtn" id="accountBtn">👤 ACCOUNT</button>
+    <button class="sideBtn" id="leaderboardBtn">🏆 LEADERBOARD</button>
+    <div class="lobbyCenter"><button class="playBtn" id="playBtn">SPIL</button></div>
+    <button id="settingsBtn">⚙</button>
+  </div>
+</section>
+
+
+<section id="mapSelect" class="screen">
+  <div class="levelTop">
+    <button class="levelBack" id="levelBack">←</button>
+    <h2>VÆLG BANE</h2>
+    <div></div>
+  </div>
+  <button class="levelArrow left" id="levelPrev">‹</button>
+  <div class="levelCard">
+    <div class="levelNumber" id="levelNumber">1</div>
+    <div class="levelIcon">🌲</div>
+    <h1 id="levelTitle">MØRKESKOVEN</h1>
+    <p id="levelInfo">5 POSTER · 4 FANGERE</p>
+    <div class="levelDots" id="levelDots"></div>
+    <button class="levelPlay" id="levelPlay">SPIL BANE</button>
+  </div>
+  <button class="levelArrow right" id="levelNext">›</button>
+</section>
+
+<section id="game" class="screen">
+  <canvas id="gameCanvas"></canvas>
+  <div class="hud">
+    <div class="progress"><i id="progress"></i></div>
+    <span id="posterText">0/5</span>
+  </div>
+  <div id="energyWrap"><div class="energyBar"><i id="energyFill"></i></div></div>
+  <div class="gameButtons">
+    <button class="smallBtn" id="restartBtn">↻</button>
+    <button class="smallBtn" id="testStopBtn" style="display:none">■ STOP TEST</button><button class="smallBtn" id="gameBack">☰</button>
+  </div>
+  <div id="joystick"><div id="stick"></div></div>
+  <button id="boost">LØB</button>
+  <div id="message"></div>
+</section>
+
+<section id="account" class="screen">
+  <div class="panel">
+    <button class="back" onclick="showScreen('lobby')">← TILBAGE</button>
+    <h2>ACCOUNT</h2>
+    <div class="accountWrap">
+      <div id="accountLoggedOut" class="card accountBox">
+        <h3>LOG IND</h3>
+        <input id="loginUsername" placeholder="Brugernavn" maxlength="20">
+        <input id="loginPassword" type="password" placeholder="Adgangskode" maxlength="72">
+        <button type="button" id="loginBtn">LOG IND</button>
+        <hr>
+        <h3>OPRET ACCOUNT</h3>
+        <input id="registerUsername" placeholder="Brugernavn" maxlength="20">
+        <input id="registerPassword" type="password" placeholder="Adgangskode" maxlength="72">
+        <button type="button" id="registerBtn">OPRET ACCOUNT</button>
+        <p id="accountError" class="accountMsg"></p>
+      </div>
+      <div id="accountLoggedIn" class="card accountBox" style="display:none">
+        <h3 id="accountName">@</h3>
+        <p id="accountStats"></p>
+        <button type="button" id="logoutBtn">LOG UD</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="leaderboard" class="screen">
+  <div class="panel">
+    <button class="back" onclick="showScreen('lobby')">← TILBAGE</button>
+    <h2>LEADERBOARD</h2>
+    <div id="leaderboardCards" class="cards"></div>
+  </div>
+</section>
+
+<section id="community" class="screen">
+  <div class="panel"><button class="back" onclick="showScreen('lobby')">← TILBAGE</button><h2>BANER</h2><div style="max-width:700px;margin:20px auto 0;display:flex;gap:8px"><input id="mapSearch" placeholder="🔎 SØG EFTER BANE..." style="flex:1;background:#101d12;color:#eef5ec;border:1px solid #53694f;border-radius:9px;padding:12px 14px;font-size:16px"><button id="clearMapSearch" style="background:#172519;border:1px solid #53694f;border-radius:9px;padding:0 14px">✕</button></div><div id="mapCards" class="cards"></div></div>
+</section>
+
+<section id="skins" class="screen">
+  <div class="panel skinPanel">
+    <button class="back" onclick="showScreen('lobby')">← TILBAGE</button><h2>SKINS</h2>
+    <p class="skinHint">Tryk på en figur for at vælge den</p>
+    <div class="skinIconGrid">
+      <button class="skinIcon" data-skin="ranger" title="Skovvogter"><span class="skinArt"><b>🧢</b><i>🌲</i></span></button>
+      <button class="skinIcon" data-skin="hood" title="Nattehætte"><span class="skinArt"><b>🧥</b><i>🌙</i></span></button>
+      <button class="skinIcon" data-skin="scout" title="Opdager"><span class="skinArt"><b>🧭</b><i>🎒</i></span></button>
+      <button class="skinIcon" data-skin="rain" title="Regndragt"><span class="skinArt"><b>☔</b><i>💧</i></span></button>
+      <button class="skinIcon" data-skin="ghost" title="Tågevandrer"><span class="skinArt"><b>👻</b><i>🌫️</i></span></button>
+      <button class="skinIcon" data-skin="hiker" title="Vandrer"><span class="skinArt"><b>🥾</b><i>🎒</i></span></button>
+      <button class="skinIcon" data-skin="lantern" title="Lygtevagt"><span class="skinArt"><b>🏮</b><i>🧥</i></span></button>
+      <button class="skinIcon" data-skin="mushroom" title="Svampespejder"><span class="skinArt"><b>🍄</b><i>🌿</i></span></button>
+      <button class="skinIcon" data-skin="fox" title="Ræv"><span class="skinArt"><b>🦊</b><i>🍂</i></span></button>
+      <button class="skinIcon" data-skin="owl" title="Ugle"><span class="skinArt"><b>🦉</b><i>🌙</i></span></button>
+      <button class="skinIcon" data-skin="bee" title="Skovbi"><span class="skinArt"><b>🐝</b><i>🌼</i></span></button>
+      <button class="skinIcon" data-skin="fisher" title="Søfanger"><span class="skinArt"><b>🎣</b><i>🧢</i></span></button>
+      <button class="skinIcon" data-skin="explorer" title="Opdager"><span class="skinArt"><b>🗺️</b><i>🔦</i></span></button>
+      <button class="skinIcon" data-skin="winter" title="Vintervandrer"><span class="skinArt"><b>❄️</b><i>🧣</i></span></button>
+      <button class="skinIcon" data-skin="autumn" title="Efterårsvandrer"><span class="skinArt"><b>🍁</b><i>🥾</i></span></button>
+    </div>
+    <div id="selectedSkinName" class="selectedSkinName"></div>
+  </div>
+</section>
+
+<section id="settings" class="screen">
+  <div class="panel"><button class="back" onclick="showScreen('lobby')">← TILBAGE</button><h2>INDSTILLINGER</h2>
+    <div class="cards">
+      <div class="card"><h3>SKOVLYS</h3><p id="brightnessText">Gør skoven lysere eller mørkere.</p><button id="brightnessBtn" onclick="toggleBrightness()">SKIFT</button></div>
+
+    </div>
+  </div>
+</section>
+
+<div id="editorChooser" aria-hidden="true">
+  <div class="editorChooserBox">
+    <h2>VÆLG BANE TIL EDITOR</h2>
+    <p>Vælg en bane at arbejde videre på, eller start en ny.</p>
+    <div id="editorChooserGrid" class="editorChooserGrid"></div>
+    <button class="editorChooserClose" id="editorChooserClose">← TILBAGE</button>
+  </div>
+</div>
+
+<section id="editor" class="screen">
+  <div class="editorTop">
+    <button onclick="showScreen('community')">← BANER</button>
+    <button onclick="clearEditor()">NY</button>
+    <button id="undoBtn" onclick="undoEditor()" title="Fortryd">↶ FORTRYD</button>
+    <button id="redoBtn" onclick="redoEditor()" title="Fortryd fortryd">↷ FORTRYD IGEN</button>
+    <button id="publishEditorBtn" onclick="publishEditor()">PUBLISH BANE</button>
+    <button id="editorTestBtn" onclick="testEditor()">▶ TEST</button>
+    <button class="editorSettingsBtn" onclick="toggleEditorSettings()">⚙ LEVEL SETTINGS</button>
+    <input id="editorTitle" value="Min Skovbane" maxlength="24" style="background:#101d12;color:#eef5ec;border:1px solid #3f553d;border-radius:7px;padding:8px;min-width:140px">
+    <span id="editorName">SKOV-EDITOR</span>
+  </div>
+  <canvas id="editorCanvas"></canvas>
+  <div id="editorSettings" class="editorSettings hidden">
+    <h3>⚙ LEVEL SETTINGS</h3>
+    <div class="settingRow"><label>🌬 Vindstyrke <span id="windValue">50%</span></label><input id="editorWind" type="range" min="0" max="100" value="50"></div>
+    <div class="settingRow"><label>🌑 Mørke <span id="darkValue">50%</span></label><input id="editorDark" type="range" min="0" max="100" value="50"></div>
+    <p style="font-size:12px;opacity:.72;margin:8px 0 0">Vinden påvirker vejret i banen. I vinter bliver det til snestorm, og i efterår flyver bladene med vinden.</p>
+  </div>
+  <aside class="tools">
+    <h3>SKOV-EDITOR</h3>
+    <div class="toolgrid">
+      <button data-tool="wall">🧱 VÆG</button>
+      <button data-tool="floor">🌿 GULV</button>
+      <button data-tool="poster">🪧 POSTER</button>
+      <button data-tool="catcher">👁 FANGER</button>
+      <button data-tool="start">🏕 START</button>
+      <button data-tool="tree">🌲 TRÆ</button>
+      <button data-tool="box">📦 KASSE</button>
+      <button data-tool="lamp">💡 LAMPE</button>
+      <button data-tool="fog">🌫 TÅGE</button>
+      <button data-tool="erase">⌫ SLET</button>
+    </div>
+    <div class="themeTools">
+      <h4>🌲 TEMA</h4>
+      <div class="themeGrid">
+        <button type="button" data-theme="normal">🌲 NORMAL</button>
+        <button type="button" data-theme="winter">❄️ VINTER</button>
+        <button type="button" data-theme="autumn">🍂 EFTERÅR</button>
+        <button type="button" data-theme="dead">🪵 DØD SKOV</button>
+      </div>
+    </div>
+    <div class="editorInfo"><b>Sådan bygger du:</b><br>Klik eller træk på kortet for at male. Vægge stopper spilleren. Træer, buske og lamper er pynt, så du kan gå forbi dem uden at sidde fast.<br><br><b>Poster:</b> placér dem i den rækkefølge, de skal findes. Maks. 5.<br><br><b>Fanger:</b> de patruljerer og bruger pathfinding, når de ser dig.</div>
+  </aside>
+</section>
+
+<section id="win" class="screen">
+  <h1>DU VANDT</h1><p>Alle poster er fundet i skoven.</p>
+  <div class="winBtns"><button onclick="restartGame()">SPIL IGEN</button><button onclick="showScreen('lobby')">LOBBY</button></div>
+</section>
+
+<script>
+
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
+const ecanvas=document.getElementById('editorCanvas'),ectx=ecanvas.getContext('2d');
+const COLS=30,ROWS=16;
+let W=0,H=0,cell=40,currentMap=null,gameRunning=false,nextPoster=0,isEditorTest=false;
+let safeZone={posterIndex:-1,remaining:0};
+let player={x:2,y:2,r:.18,speed:3.105},playerSkin=localStorage.getItem('skovhejkSkin')||'ranger',catchers=[],joy={x:0,y:0},boost=false,lastTime=0;
+let energy=100,energyMax=100,energyDrain=34,energyRegen=20;
+let fogBright=localStorage.getItem('skovhejkBright')==='1', editorTool='wall',editorTheme='normal',editorMap=null,stars=[];
+let editorWind=50,editorDark=50,editorWeatherRAF=0,editorSettingsOpen=false,editorWeatherT=0; let editorUndo=[],editorRedo=[],editorStrokeSaved=false;
+let currentUser=null, apiToken=localStorage.getItem('skovhejkToken')||'', serverMaps=[];
+
+function resize(){
+ W=canvas.width=innerWidth*devicePixelRatio; H=canvas.height=innerHeight*devicePixelRatio;
+ canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';
+ const toolsW=innerWidth<=700?165:235;
+ const editorW=Math.max(220,innerWidth-toolsW);
+ const editorH=Math.max(160,innerHeight-55);
+ ecanvas.width=editorW*devicePixelRatio; ecanvas.height=editorH*devicePixelRatio;
+ ecanvas.style.width=editorW+'px';ecanvas.style.height=editorH+'px';
+ cell=Math.min(innerWidth/COLS,innerHeight/ROWS);
+ if(editorMap)drawEditor();
+}
+addEventListener('resize',resize);resize();
+
+function blankMap(name){
+ return {name,w:COLS,h:ROWS,theme:'normal',wind:50,darkness:50,walls:[],posters:[],catchers:[],boxes:[],trees:[],lamps:[],fog:[],autumn:[],winter:[],dead:[],start:{x:2,y:2}};
+}
+function rect(x,y,w,h){let a=[];for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)a.push({x:xx,y:yy});return a}
+function makeForest(name,seed){
+ let m=blankMap(name);
+ // Labyrintagtige skove: lange vægge med skiftevis åbninger, så man skal
+ // vælge rute i stedet for bare at gå lige igennem banen.
+ m.walls=[...rect(0,0,COLS,1),...rect(0,ROWS-1,COLS,1),...rect(0,0,1,ROWS),...rect(COLS-1,0,1,ROWS)];
+ const layouts=[
+   // Mørkeskoven
+   [[5,1,1,7],[5,10,1,5],[10,4,1,11],[10,1,1,2],[15,1,1,6],[15,9,1,6],[20,4,1,11],[20,1,1,2],[25,1,1,7],[25,10,1,5]],
+   // Den Gamle Skov
+   [[4,3,7,1],[4,3,1,6],[10,3,1,8],[7,8,7,1],[13,5,1,7],[16,2,8,1],[16,2,1,6],[23,2,1,11],[18,12,6,1]],
+   // Tågeskoven
+   [[5,2,1,9],[5,12,6,1],[10,4,1,9],[10,1,5,1],[14,1,1,6],[14,8,1,7],[19,3,1,10],[19,3,5,1],[24,6,1,8]],
+   // Skovsøen
+   [[4,2,1,5],[4,9,1,6],[8,5,6,1],[13,2,1,7],[13,11,1,4],[17,4,1,9],[21,2,6,1],[21,2,1,6],[26,5,1,10]],
+   // Naturskoven
+   [[5,2,1,6],[5,10,1,5],[9,6,7,1],[9,6,1,6],[15,2,1,8],[15,11,5,1],[20,3,1,8],[24,7,1,8],[24,2,5,1]]
+ ][seed%5];
+ layouts.forEach(a=>m.walls.push(...rect(...a)));
+ // Posterplaceringer ligger i forskellige lommer i labyrinten.
+ const posterSets=[
+   [{x:3,y:3},{x:7,y:13},{x:12,y:3},{x:18,y:13},{x:27,y:7}],
+   [{x:2,y:12},{x:8,y:2},{x:12,y:13},{x:18,y:4},{x:27,y:12}],
+   [{x:3,y:13},{x:8,y:2},{x:12,y:7},{x:22,y:12},{x:27,y:3}],
+   [{x:3,y:7},{x:7,y:13},{x:11,y:3},{x:18,y:13},{x:27,y:11}],
+   [{x:3,y:3},{x:8,y:13},{x:12,y:3},{x:18,y:10},{x:27,y:13}]
+ ];
+ m.posters=posterSets[seed%5];
+ m.catchers=[
+   {x:12,y:3},{x:20,y:13},{x:27,y:3},{x:17,y:8}
+ ];
+ m.start={x:2,y:2};
+ const treeSpots=[
+   [[3,5],[8,3],[12,11],[18,3],[22,12],[27,5],[28,13],[7,7],[16,13],[23,9]],
+   [[3,5],[8,12],[12,2],[15,13],[20,3],[26,4],[27,13],[7,6],[18,10],[21,11]],
+   [[3,5],[7,4],[12,12],[17,3],[22,13],[27,5],[28,11],[8,10],[16,12],[23,4]],
+   [[3,3],[7,11],[11,4],[16,13],[20,3],[27,4],[28,12],[8,8],[18,10],[23,12]],
+   [[3,5],[8,3],[12,12],[17,3],[21,13],[27,5],[28,11],[7,8],[18,12],[23,4]]
+ ][seed%5];
+ m.trees=treeSpots.map(([x,y])=>({x,y})).filter(t=>!isWall(t.x,t.y,m));
+ m.boxes=[{x:3,y:8},{x:12,y:11},{x:18,y:6},{x:27,y:13}].filter(b=>!isWall(b.x,b.y,m));
+ m.lamps=[{x:3,y:4},{x:8,y:13},{x:16,y:2},{x:22,y:8},{x:27,y:11}].filter(l=>!isWall(l.x,l.y,m));
+ m.fog=[{x:9,y:5,r:3},{x:20,y:10,r:3},{x:27,y:5,r:2}];
+ return m;
+}
+const official=[
+ makeForest('Mørkeskoven',0),
+ makeForest('Den Gamle Skov',1),
+ makeForest('Tågeskoven',2),
+ makeForest('Skovsøen',0),
+ makeForest('Naturskoven',1)
+];
+official.forEach((m,i)=>{m.id='official-'+i;m.official=true;m.verified=true;m.creator='DaDev'});
+
+function clone(o){return JSON.parse(JSON.stringify(o))}
+// ONLINE MODE: accounts, published maps and leaderboard live on the server, so all devices share the same data.
+async function api(path,options={}){
+  const opts={...options,headers:{'Content-Type':'application/json',...(options.headers||{})}};
+  const token=localStorage.getItem('skovhejkToken')||'';
+  if(token) opts.headers.Authorization='Bearer '+token;
+  const res=await fetch(path,opts);
+  let data={}; try{data=await res.json()}catch(e){}
+  if(!res.ok) throw new Error(data.error||data.message||'Serverfejl ('+res.status+').');
+  return data;
+}
+function loadMaps(){
+ let saved=[];try{saved=JSON.parse(localStorage.getItem('skovhejkMaps')||'[]')}catch(e){}
+ return [...official,...serverMaps,...saved];
+}
+async function refreshServerData(){
+ try{const [maps,me]=await Promise.all([api('/api/maps'),api('/api/me')]);serverMaps=maps.maps||[];currentUser=me.user||null;updateAccountUI();if(document.getElementById('community').classList.contains('active'))renderMaps();if(document.getElementById('mapSelect').classList.contains('active')){levelList=loadMaps();if(levelIndex>=levelList.length)levelIndex=0;renderLevelSelect();}}catch(e){console.warn(e)}
+}
+function showScreen(id){
+ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ if(id==='community')renderMaps();
+ if(id==='leaderboard')renderLeaderboard();
+ if(id==='account')updateAccountUI();
+}
+document.getElementById('playBtn').onclick=()=>openLevelSelect();
+document.getElementById('skinBtn').onclick=()=>showScreen('skins'); document.querySelectorAll('.skinIcon').forEach(b=>b.onclick=()=>setSkin(b.dataset.skin)); setSkin(playerSkin);
+document.getElementById('communityBtn').onclick=()=>{showScreen('community');refreshServerData()};
+document.getElementById('mapSearch')?.addEventListener('input',renderMaps);
+document.getElementById('clearMapSearch')?.addEventListener('click',()=>{const i=document.getElementById('mapSearch');if(i)i.value='';renderMaps()});
+document.getElementById('editorLobbyBtn').onclick=(e)=>{e.preventDefault();openEditor();};
+document.getElementById('editorChooserClose')?.addEventListener('click',()=>{document.getElementById('editorChooser')?.classList.remove('active');document.getElementById('editorChooser')?.setAttribute('aria-hidden','true');showScreen('lobby')});
+document.getElementById('testStopBtn')?.addEventListener('click',stopEditorTest);
+document.getElementById('accountBtn').onclick=()=>showScreen('account');
+document.getElementById('leaderboardBtn').onclick=()=>{showScreen('leaderboard');renderLeaderboard()};
+document.getElementById('settingsBtn').onclick=()=>showScreen('settings');
+document.getElementById('restartBtn').onclick=restartGame;
+document.getElementById('gameBack').onclick=()=>{if(isEditorTest){stopEditorTest();}else{gameRunning=false;showScreen('lobby')}};
+
+
+
+let levelList=[],levelIndex=0;
+
+function openLevelSelect(){
+  // SPIL viser kun de officielle baner.
+  levelList=official.slice();
+  levelIndex=0;
+  showScreen('mapSelect');
+  renderLevelSelect();
+}
+function renderLevelSelect(){
+  if(!levelList.length)return;
+  const m=levelList[levelIndex];
+  document.getElementById('levelNumber').textContent=(levelIndex+1);
+  document.getElementById('levelTitle').textContent=m.name.toUpperCase();
+  document.getElementById('levelInfo').textContent=m.posters.length+' POSTER · '+m.catchers.length+' FANGERE';
+  const dots=document.getElementById('levelDots');dots.innerHTML='';
+  levelList.forEach((_,i)=>{
+    const d=document.createElement('span');if(i===levelIndex)d.className='active';dots.appendChild(d);
+  });
+}
+function levelMove(dir){
+  if(!levelList.length)levelList=official.slice();
+  levelIndex=(levelIndex+dir+levelList.length)%levelList.length;
+  renderLevelSelect();
+}
+document.getElementById('levelBack').onclick=()=>showScreen('lobby');
+document.getElementById('levelPrev').onclick=()=>levelMove(-1);
+document.getElementById('levelNext').onclick=()=>levelMove(1);
+document.getElementById('levelPlay').onclick=()=>{
+  if(levelList[levelIndex])startGame(levelList[levelIndex]);
+};
+
+function getSavedPublishedMaps(){
+ // Online version uses the server as the shared source of community maps.
+ return [];
+}
+function renderMaps(){
+ const box=document.getElementById('mapCards');if(!box)return;
+ const query=(document.getElementById('mapSearch')?.value||'').trim().toLowerCase();
+ box.innerHTML='';
+ const local=getSavedPublishedMaps();
+ const allCustom=[...serverMaps,...local];
+ const seen=new Set();
+ const maps=allCustom.filter(m=>m&&!m.official&&!seen.has(m.id)&&seen.add(m.id)).filter(m=>{
+   if(!query)return true;
+   return String(m.name||'').toLowerCase().includes(query)||String(m.creator||'').toLowerCase().includes(query);
+ });
+ if(!maps.length){
+   const empty=document.createElement('div');empty.className='card';empty.style.gridColumn='1/-1';empty.innerHTML='<h3>INGEN BANER FUNDET</h3><p>Prøv et andet navn eller creator-navn.</p>';box.appendChild(empty);
+ }
+ maps.forEach(m=>{
+  const d=document.createElement('div');d.className='card';
+  const badge=m.verified?'✓ VERIFIED':'PUBLISHED';
+  d.innerHTML='<h3>'+escapeHtml(m.name)+' <span class="verified">'+badge+'</span></h3><p>🌲 Skov · 🪧 '+(m.posters?.length||0)+' poster · 👁 '+(m.catchers?.length||0)+' fanger</p>'+(m.creator?'<p class="creatorLine">Creator: '+escapeHtml(m.creator)+'</p>':'')+'<button>SPIL</button>'+(m.id&&!m.verified&&currentUser?.username==='DaDev'?'<button class="verifyBtn" style="margin-left:6px">VERIFY</button>':'');
+  d.querySelector('button').onclick=()=>startGame(m);
+  const verify=d.querySelector('.verifyBtn');
+  if(verify)verify.onclick=async()=>{try{await api('/api/maps/'+encodeURIComponent(m.id)+'/verify',{method:'POST'});await refreshServerData()}catch(e){alert(e.message)}};
+  box.appendChild(d);
+ });
+ const ed=document.createElement('div');ed.className='card';
+ ed.innerHTML='<h3>✏️ SKAB SKOVBANE</h3><p>Lav din egen skov med posterne og fangerne.</p><button>ÅBN EDITOR</button>';
+ ed.querySelector('button').onclick=openEditor;
+ box.appendChild(ed);
+}
+
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+
+
+function isWall(x,y,m=currentMap){
+ x=Math.floor(x);y=Math.floor(y);
+ return x<0||y<0||x>=m.w||y>=m.h||m.walls.some(p=>p.x===x&&p.y===y);
+}
+function blockedCircle(x,y,r,m=currentMap){
+ // Vægge bruger en fuld celle som hitbox, uanset hvordan de ser ud.
+ const minX=Math.floor(x-r), maxX=Math.floor(x+r);
+ const minY=Math.floor(y-r), maxY=Math.floor(y+r);
+ for(let yy=minY;yy<=maxY;yy++){
+   for(let xx=minX;xx<=maxX;xx++){
+     if(isWall(xx,yy,m)) return true;
+   }
+ }
+ return false;
+}
+function lineClear(ax,ay,bx,by,m=currentMap){
+ const d=Math.hypot(bx-ax,by-ay),n=Math.ceil(d*8);
+ for(let i=0;i<=n;i++){let t=i/n||0,x=ax+(bx-ax)*t,y=ay+(by-ay)*t;if(isWall(x,y,m))return false}
+ return true;
+}
+function canSee(c){
+ const d=Math.hypot(player.x-c.x,player.y-c.y);
+ return d<8.5 && lineClear(c.x,c.y,player.x,player.y);
+}
+
+const dirs=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+function astar(sx,sy,tx,ty,m){
+ let s={x:Math.floor(sx),y:Math.floor(sy)},g={x:Math.floor(tx),y:Math.floor(ty)};
+ let open=[{x:s.x,y:s.y,g:0,f:0}],came=new Map(),cost=new Map([[s.x+','+s.y,0]]);
+ let guard=0;
+ while(open.length&&guard++<1500){
+  open.sort((a,b)=>a.f-b.f);let cur=open.shift();
+  if(cur.x===g.x&&cur.y===g.y){
+   let path=[],k=cur.x+','+cur.y;
+   while(k!==s.x+','+s.y){let [x,y]=k.split(',').map(Number);path.unshift({x:x+.5,y:y+.5});k=came.get(k)}
+   return path;
+  }
+  for(const [dx,dy] of dirs){
+   if(dx&&dy&&(isWall(cur.x+dx,cur.y,m)||isWall(cur.x,cur.y+dy,m)))continue;
+   let nx=cur.x+dx,ny=cur.y+dy;if(isWall(nx,ny,m))continue;
+   let ng=cur.g+(dx&&dy?1.414:1),key=nx+','+ny;
+   if(ng<(cost.get(key)??1e9)){cost.set(key,ng);came.set(key,cur.x+','+cur.y);let h=Math.hypot(g.x-nx,g.y-ny);open.push({x:nx,y:ny,g:ng,f:ng+h})}
+  }
+ }
+ return [];
+}
+function createCatchers(){
+ // Test/restart starter altid fangerne på deres gemte originale pladser.
+ catchers=currentMap.catchers.map((c,i)=>({
+  x:Math.floor(c.x)+.5,y:Math.floor(c.y)+.5,r:.29,speed:3.3375+Math.random()*.06,chaseSpeed:3.3375+Math.random()*.06,
+  seen:false,path:[],pi:0,nextPath:0,lastSeenX:c.x+.5,lastSeenY:c.y+.5,lost:0,
+  patrolTarget:null,patrolTimer:0,phase:Math.random()*6.28
+ }));
+ catchers.forEach(c=>pickPatrol(c));
+}
+function pickPatrol(c){
+ for(let i=0;i<30;i++){
+  let x=2+Math.random()*(COLS-4),y=2+Math.random()*(ROWS-4);
+  const targetPoster=currentMap.posters?.[nextPoster];
+  const farFromPoster=!targetPoster||Math.hypot(x-(targetPoster.x+.5),y-(targetPoster.y+.5))>2.15;
+  if(!blockedCircle(x,y,.28,currentMap)&&Math.hypot(x-player.x,y-player.y)>3&&farFromPoster){
+   c.patrolTarget={x,y};c.path=astar(c.x,c.y,x,y,currentMap);c.pi=0;return;
+  }
+ }
+}
+function moveUnit(c,dt,speed){
+ if(!c.path||c.pi>=c.path.length)return false;
+ let t=c.path[c.pi],dx=t.x-c.x,dy=t.y-c.y,d=Math.hypot(dx,dy);
+ if(d<.08){c.x=t.x;c.y=t.y;c.pi++;return true}
+ let step=Math.min(d,speed*dt);
+ // Fangerne går fra celle-center til celle-center. A* har allerede
+ // kontrolleret hjørner, så de kan ikke sætte sig fast i vægkanter.
+ c.x+=dx/d*step;
+ c.y+=dy/d*step;
+ return true;
+}
+function updateCatchers(dt){
+ for(const c of catchers){
+  // Safezonen er en reel beskyttelseszone: mens spilleren står i den,
+  // må en fanger ikke fortsætte sin jagt ind i zonen.
+  const safePoster=currentMap?.posters?.[safeZone.posterIndex];
+  const safeX=safePoster ? safePoster.x+.5 : player.x;
+  const safeY=safePoster ? safePoster.y+.5 : player.y;
+  const safeActive=safeZone.remaining>0;
+  const inSafe=safeActive && Math.hypot(player.x-safeX,player.y-safeY)<1.65;
+
+  if(inSafe){
+   c.seen=false;
+   c.lost=0;
+   c.nextPath=0;
+   c.patrolTimer+=dt;
+
+   // I safezonen skal fangerne aktivt gå VÆK fra posten/safezonen.
+   // Når de er kommet langt nok væk, får de et nyt tilfældigt patruljemål,
+   // så de ikke bare står på samme sted resten af de 5 sekunder.
+   const dx=c.x-safeX,dy=c.y-safeY,d=Math.hypot(dx,dy)||1;
+   if(!c.safeTarget || c.patrolTimer>1.05 || !c.path || c.pi>=c.path.length){
+    c.patrolTimer=0;
+    let found=false;
+    for(let i=0;i<35;i++){
+     const a=Math.random()*Math.PI*2;
+     const dist=4.0+Math.random()*3.0;
+     const tx=safeX+Math.cos(a)*dist;
+     const ty=safeY+Math.sin(a)*dist;
+     if(tx<1||ty<1||tx>COLS-2||ty>ROWS-2)continue;
+     if(Math.hypot(tx-safeX,ty-safeY)<3.35)continue;
+     if(blockedCircle(tx,ty,.28,currentMap))continue;
+     const path=astar(c.x,c.y,tx,ty,currentMap);
+     if(path&&path.length){c.safeTarget={x:tx,y:ty};c.path=path;c.pi=0;found=true;break;}
+    }
+    if(!found){
+     // Fallback: fortsæt direkte væk fra zonen.
+     const tx=safeX+(dx/d)*4.2;
+     const ty=safeY+(dy/d)*4.2;
+     c.path=astar(c.x,c.y,tx,ty,currentMap);c.pi=0;
+    }
+   }
+   // De går ikke langsommere nu: safezone-bevægelsen bruger normal patruljefart.
+   // En patruljerute må aldrig føre dem ind i selve safezonen.
+   if(c.path&&c.path.length){
+    const t=c.path[c.pi];
+    const nextD=t?Math.hypot(t.x-safeX,t.y-safeY):999;
+    if(nextD<2.45){c.path=[];c.pi=0;c.safeTarget=null;c.patrolTimer=1.2;continue;}
+    const beforeX=c.x,beforeY=c.y;
+    moveUnit(c,dt,c.speed);
+    if(Math.hypot(c.x-safeX,c.y-safeY)<2.35){c.x=beforeX;c.y=beforeY;c.path=[];c.pi=0;c.safeTarget=null;c.patrolTimer=1.2;}
+   }
+   continue;
+  }
+  c.safeTarget=null;
+
+  const see=canSee(c);
+  if(see){c.seen=true;c.lastSeenX=player.x;c.lastSeenY=player.y;c.lost=0}
+  else if(c.seen)c.lost+=dt;
+  if(c.seen){
+   c.nextPath-=dt;
+   if(c.nextPath<=0){
+    const dx=player.x-c.x,dy=player.y-c.y,d=Math.hypot(dx,dy)||1;
+    const sx=-dy/d,sy=dx/d;
+    const wave=Math.sin(performance.now()/260+c.phase)*.72;
+    c.path=astar(c.x,c.y,player.x+sx*wave,player.y+sy*wave,currentMap);c.pi=0;c.nextPath=.10;
+   }
+   moveUnit(c,dt,c.chaseSpeed);
+   if(c.lost>2.4){c.seen=false;c.nextPath=0}
+  }else{
+   if(!c.path||c.pi>=c.path.length)pickPatrol(c);
+   moveUnit(c,dt,c.speed);
+   c.patrolTimer+=dt;
+   if(c.patrolTimer>2.5){c.patrolTimer=0;pickPatrol(c)}
+  }
+
+  const inSafeNow=safeZone.remaining>0 && Math.hypot(player.x-safeX,player.y-safeY)<1.65;
+  if(!inSafeNow && Math.hypot(c.x-player.x)<.62) caught();
+ }
+}
+function startGame(map,editorTest=false){
+ currentMap=clone(map);
+ // Ældre/lokalt gemte baner kan mangle nyere arrays. Normalisér dem før spillet starter,
+ // så genstart efter at være blevet fanget aldrig rammer en ikke-iterérbar værdi.
+ const arrs=['walls','posters','catchers','boxes','trees','lamps','fog','autumn','winter','dead'];
+ arrs.forEach(k=>{if(!Array.isArray(currentMap[k]))currentMap[k]=[]});
+ if(!currentMap.start||typeof currentMap.start!=='object')currentMap.start={x:2,y:2};
+ currentMap.theme=currentMap.theme||'normal';
+ currentMap.wind=Number.isFinite(+currentMap.wind)?+currentMap.wind:50;
+ currentMap.darkness=Number.isFinite(+currentMap.darkness)?+currentMap.darkness:50;
+ nextPoster=0;energy=100;boost=false;joy.x=0;joy.y=0;Object.keys(pcKeys).forEach(k=>pcKeys[k]=false);isEditorTest=!!editorTest;safeZone={posterIndex:-1,remaining:0};
+ player.x=Number.isFinite(+currentMap.start.x)?+currentMap.start.x+.5:2.5;
+ player.y=Number.isFinite(+currentMap.start.y)?+currentMap.start.y+.5:2.5;
+ gameRunning=true;createCatchers();showScreen('game');hideMessage();updateHUD();updateEnergyHUD();
+ const stop=document.getElementById('testStopBtn');if(stop)stop.style.display=isEditorTest?'block':'none';
+ if(isEditorTest){try{document.documentElement.requestFullscreen?.()}catch(e){}}
+ lastTime=performance.now();requestAnimationFrame(loop);
+}
+function restartGame(){if(currentMap)startGame(currentMap,isEditorTest);else startGame(official[0])}
+function testEditor(){
+ if(!editorMap)return;
+ const testMap=clone(editorMap);
+ // Funktionsblokke er editor-only triggers og er ikke tegnet som objekter i spillet.
+ startGame(testMap,true);
+}
+function stopEditorTest(){
+ if(!isEditorTest)return;
+ gameRunning=false;boost=false;joy.x=joy.y=0;
+ const stop=document.getElementById('testStopBtn');if(stop)stop.style.display='none';
+ isEditorTest=false;
+ try{if(document.fullscreenElement)document.exitFullscreen?.()}catch(e){}
+ showScreen('editor');
+ drawEditor();
+}
+function caught(){
+ if(!gameRunning)return;
+ if(isEditorTest){
+  // Et test-run slutter straks, når spilleren bliver fanget.
+  gameRunning=false;boost=false;joy.x=joy.y=0;
+  hideMessage();
+  const stop=document.getElementById('testStopBtn');if(stop)stop.style.display='none';
+  isEditorTest=false;
+  try{if(document.fullscreenElement)document.exitFullscreen?.()}catch(e){}
+  showScreen('editor');
+  drawEditor();
+  return;
+ }
+ gameRunning=false;
+ const restartMap=clone(currentMap);
+ showMessage('DU BLEV FANGET!');
+ setTimeout(()=>startGame(restartMap,false),850);
+}
+function checkPoster(){
+ if(!gameRunning)return;
+ const p=currentMap.posters[nextPoster];if(!p)return;
+ if(Math.hypot(player.x-(p.x+.5),player.y-(p.y+.5))<.48){
+  nextPoster++;
+  // Safezonen oprettes ved den poster, spilleren netop har taget, og bliver der i 5 sekunder.
+  safeZone={posterIndex:nextPoster-1,remaining:5};
+  // I editor-test må man samle posters uden at testen slutter med en win-skærm.
+  if(nextPoster>=currentMap.posters.length){
+   if(isEditorTest){nextPoster=currentMap.posters.length;updateHUD();hideMessage();return;}
+   winGame();return;
+  }
+  updateHUD();showMessage('POST '+nextPoster+'!');
+  setTimeout(hideMessage,500);
+ }
+}
+async function recordCompletion(){
+ if(!currentUser||!currentMap?.id)return;
+ try{const data=await api('/api/completions',{method:'POST',body:JSON.stringify({mapId:currentMap.id})});if(data.user){currentUser=data.user;updateAccountUI()}}catch(e){}
+}
+function winGame(){
+ if(isEditorTest){
+  // Et test-run slutter også straks, når banen er vundet.
+  gameRunning=false;boost=false;joy.x=joy.y=0;
+  hideMessage();
+  const stop=document.getElementById('testStopBtn');if(stop)stop.style.display='none';
+  isEditorTest=false;
+  try{if(document.fullscreenElement)document.exitFullscreen?.()}catch(e){}
+  showScreen('editor');
+  drawEditor();
+  return;
+ }
+ gameRunning=false;
+ recordCompletion();stars=[];
+ for(let i=0;i<90;i++)stars.push({x:Math.random()*innerWidth,y:-Math.random()*innerHeight,v:60+Math.random()*160,r:2+Math.random()*4});
+ showScreen('win');
+}
+function showMessage(t){const m=document.getElementById('message');m.textContent=t;m.classList.add('show')}
+function hideMessage(){document.getElementById('message').classList.remove('show')}
+function updateHUD(){
+ document.getElementById('posterText').textContent=Math.min(nextPoster,currentMap.posters.length)+'/'+currentMap.posters.length;
+ document.getElementById('progress').style.width=(nextPoster/currentMap.posters.length*100)+'%';
+}
+function updateSafeZone(dt){
+ if(safeZone.remaining>0) safeZone.remaining=Math.max(0,safeZone.remaining-dt);
+ if(safeZone.remaining<=0) safeZone.posterIndex=-1;
+}
+function updatePlayer(dt){
+ updateSafeZone(dt);
+ updatePCControl(dt);
+ let dx=joy.x,dy=joy.y,l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}
+ if(!l){ boost=false; energy=Math.min(energyMax,energy+energyRegen*dt); updateEnergyHUD(); return; }
+ const sprinting=boost&&energy>0.5;
+ if(sprinting){energy=Math.max(0,energy-energyDrain*dt);if(energy<=0.5)boost=false;}
+ else energy=Math.min(energyMax,energy+energyRegen*dt);
+ let sp=player.speed*(sprinting?1.15:1);
+ let totalX=dx*sp*dt,totalY=dy*sp*dt;
+ const steps=Math.max(1,Math.ceil(Math.hypot(totalX,totalY)/.08));
+ const sx=totalX/steps,sy=totalY/steps;
+ for(let i=0;i<steps;i++){
+   let nx=player.x+sx,ny=player.y+sy;
+   if(!blockedCircle(nx,player.y,player.r,currentMap)) player.x=nx;
+   if(!blockedCircle(player.x,ny,player.r,currentMap)) player.y=ny;
+ }
+ updateEnergyHUD();
+ checkPoster();
+}
+function updateEnergyHUD(){
+ const pct=Math.max(0,Math.min(100,energy/energyMax*100));
+ const fill=document.getElementById('energyFill');
+ if(fill)fill.style.width=pct+'%';
+}
+
+function worldToScreen(x,y,ox,oy,s){return [ox+x*s,oy+y*s]}
+function drawGame(){
+ const s=cell,ox=(innerWidth-COLS*s)/2,oy=(innerHeight-ROWS*s)/2;
+ ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);ctx.clearRect(0,0,innerWidth,innerHeight);
+ const theme=currentMap?.theme||'normal';
+ const dark=Math.max(0,Math.min(100,currentMap?.darkness??50))/100;
+ const wind=Math.max(0,Math.min(100,currentMap?.wind??50))/100;
+ const bg=theme==='winter'?'#a9c3d0':theme==='autumn'?'#5b402e':theme==='dead'?'#252522':'#0b160e';
+ const groundA=theme==='winter'?'#d7e5e9':theme==='autumn'?'#6e4d35':theme==='dead'?'#403c37':(fogBright?'#263b29':'#142118');
+ const groundB=theme==='winter'?'#c7d9df':theme==='autumn'?'#60432f':theme==='dead'?'#37342f':(fogBright?'#30482f':'#182619');
+ ctx.fillStyle=bg;ctx.fillRect(0,0,innerWidth,innerHeight);
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+  ctx.fillStyle=(x+y)%2?groundB:groundA;ctx.fillRect(ox+x*s,oy+y*s,s+1,s+1);
+ }
+ // theme ground details
+ for(let i=0;i<150;i++){
+  let x=(i*83%COLS),y=(i*47%ROWS),px=ox+x*s+((i*29)%Math.max(1,s)),py=oy+y*s+((i*17)%Math.max(1,s));
+  if(theme==='winter'){ctx.strokeStyle='rgba(255,255,255,.45)';ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+3,py+3);ctx.stroke();}
+  else if(theme==='autumn'){ctx.fillStyle='rgba(178,108,42,.65)';ctx.beginPath();ctx.ellipse(px,py,2.5,1.4,.5,0,Math.PI*2);ctx.fill();}
+  else if(theme==='dead'){ctx.strokeStyle='rgba(35,32,29,.55)';ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+4,py-3);ctx.stroke();}
+  else {ctx.strokeStyle='#2b4327';ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+2,py-7);ctx.stroke();}
+ }
+ currentMap.walls.forEach(w=>{
+  ctx.fillStyle=theme==='winter'?'#657983':theme==='autumn'?'#63452f':theme==='dead'?'#35322f':'#26372a';ctx.fillRect(ox+w.x*s+1,oy+w.y*s+1,s-2,s-2);
+  ctx.fillStyle=theme==='winter'?'#8ea5ad':theme==='autumn'?'#8a6040':theme==='dead'?'#4b4742':'#3d563b';ctx.fillRect(ox+w.x*s+3,oy+w.y*s+3,s-6,4);
+ });
+ currentMap.boxes.forEach(b=>{
+  ctx.fillStyle='#725a3a';ctx.fillRect(ox+b.x*s+5,oy+b.y*s+5,s-10,s-10);ctx.strokeStyle='#a67c4c';ctx.strokeRect(ox+b.x*s+5,oy+b.y*s+5,s-10,s-10);
+ });
+ currentMap.trees.forEach(t=>{
+  if(theme==='dead'){
+   ctx.strokeStyle='#514941';ctx.lineWidth=Math.max(3,s*.11);ctx.beginPath();ctx.moveTo(ox+(t.x+.5)*s,oy+(t.y+.82)*s);ctx.lineTo(ox+(t.x+.5)*s,oy+(t.y+.25)*s);ctx.lineTo(ox+(t.x+.22)*s,oy+(t.y+.05)*s);ctx.moveTo(ox+(t.x+.5)*s,oy+(t.y+.38)*s);ctx.lineTo(ox+(t.x+.82)*s,oy+(t.y+.18)*s);ctx.stroke();
+  } else {
+   ctx.fillStyle=theme==='winter'?'#48616b':theme==='autumn'?'#754a2e':'#263d24';ctx.beginPath();ctx.arc(ox+(t.x+.5)*s,oy+(t.y+.43)*s,s*.38,0,Math.PI*2);ctx.fill();
+   if(theme==='winter'){ctx.fillStyle='#eef7fa';ctx.beginPath();ctx.arc(ox+(t.x+.42)*s,oy+(t.y+.3)*s,s*.24,0,Math.PI*2);ctx.fill();}
+   if(theme==='autumn'){ctx.fillStyle='#a65b32';ctx.beginPath();ctx.arc(ox+(t.x+.35)*s,oy+(t.y+.32)*s,s*.16,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c07a35';ctx.beginPath();ctx.arc(ox+(t.x+.67)*s,oy+(t.y+.45)*s,s*.15,0,Math.PI*2);ctx.fill();}
+  }
+  ctx.fillStyle=theme==='winter'?'#596d73':theme==='autumn'?'#563a27':theme==='dead'?'#403a35':'#523c25';ctx.fillRect(ox+(t.x+.44)*s,oy+(t.y+.48)*s,s*.12,s*.4);
+ });
+ currentMap.lamps.forEach(l=>{
+  ctx.fillStyle='#a8c87d';ctx.shadowBlur=18;ctx.shadowColor='#9fc576';ctx.beginPath();ctx.arc(ox+(l.x+.5)*s,oy+(l.y+.5)*s,s*.10,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+ });
+ const safePoster=currentMap.posters?.[safeZone.posterIndex];
+ if(safePoster && safeZone.remaining>0 && safeZone.posterIndex>=0){
+  const sx=ox+(safePoster.x+.5)*s,sy=oy+(safePoster.y+.5)*s;
+  ctx.save();
+  ctx.fillStyle='rgba(105,190,150,.12)';ctx.strokeStyle='rgba(130,225,175,.85)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(sx,sy,s*1.28,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='rgba(230,255,240,.92)';ctx.font='bold '+Math.max(9,s*.14)+'px Arial';ctx.textAlign='center';ctx.fillText(Math.ceil(safeZone.remaining)+'s',sx,sy-s*1.42);
+  ctx.restore();
+ }
+ currentMap.posters.forEach((p,i)=>{
+  const done=i<nextPoster;if(done)return;
+  const active=i===nextPoster;
+  ctx.shadowBlur=active?18:0;ctx.shadowColor='#e1d36b';
+  ctx.fillStyle=active?'#e4d36b':'#615e3e';ctx.beginPath();ctx.arc(ox+(p.x+.5)*s,oy+(p.y+.5)*s,s*(active?.29:.22),0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  ctx.fillStyle='#172015';ctx.font='bold '+Math.max(12,s*.23)+'px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i+1,ox+(p.x+.5)*s,oy+(p.y+.5)*s);
+ });
+ // start
+ ctx.strokeStyle='#95ad82';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ox+(currentMap.start.x+.5)*s,oy+(currentMap.start.y+.5)*s,s*.3,0,Math.PI*2);ctx.stroke();
+ // catchers
+ catchers.forEach(c=>{
+  if(c.seen){ctx.fillStyle='rgba(210,70,60,.13)';ctx.beginPath();ctx.arc(ox+c.x*s,oy+c.y*s,s*1.5,0,Math.PI*2);ctx.fill()}
+  ctx.fillStyle=c.seen?'#d3ddd0':'#69786a';ctx.beginPath();ctx.arc(ox+c.x*s,oy+c.y*s,s*.28,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';ctx.beginPath();ctx.arc(ox+(c.x-.09)*s,oy+(c.y-.04)*s,s*.045,0,Math.PI*2);ctx.arc(ox+(c.x+.09)*s,oy+(c.y-.04)*s,s*.045,0,Math.PI*2);ctx.fill();
+  if(c.seen){ctx.strokeStyle='#d15b4e';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ox+c.x*s,oy+c.y*s,s*.42,0,Math.PI*2);ctx.stroke()}
+ });
+ // humanoid skins – alle skins er menneskelige figurer med forskelligt tøj/udstyr
+ const px=ox+player.x*s,py=oy+player.y*s,r=s*player.r;
+ ctx.save();
+ const cfg={
+  ranger:['#365b38','#6d5136','#c99572','cap'], hood:['#202833','#121820','#c99572','hood'], scout:['#6b573b','#314b35','#c99572','bag'],
+  rain:['#466d78','#29434c','#c99572','hood'], ghost:['#7e8d88','#b9c5bf','#d3a287','scarf'], hiker:['#705b42','#3f4e37','#c99572','bag'],
+  lantern:['#5b3d2e','#a46b35','#c99572','lamp'], mushroom:['#6b4b36','#b74c3f','#c99572','mush'], fox:['#a95f2e','#4c3426','#c99572','fox'],
+  owl:['#594c3f','#8b8170','#c99572','owl'], bee:['#c7a52e','#252525','#c99572','bee'], fisher:['#38566a','#315342','#c99572','cap'],
+  explorer:['#65724a','#806044','#c99572','lamp'], winter:['#52728a','#d9e2e5','#c99572','scarf'], autumn:['#8b5438','#6a402f','#c99572','cap']
+ }[playerSkin]||['#52704c','#4a3a2e','#c99572','cap'];
+ const [shirt,pants,skin,gear]=cfg;
+ // ben
+ ctx.fillStyle=pants;ctx.fillRect(px-r*.62,py+r*.25,r*.48,r*.85);ctx.fillRect(px+r*.14,py+r*.25,r*.48,r*.85);
+ // krop og arme
+ ctx.fillStyle=shirt;ctx.fillRect(px-r*.72,py-r*.28,r*1.44,r*1.02);ctx.fillRect(px-r*1.02,py-r*.18,r*.3,r*.82);ctx.fillRect(px+r*.72,py-r*.18,r*.3,r*.82);
+ // hoved
+ ctx.fillStyle=skin;ctx.beginPath();ctx.arc(px,py-r*.72,r*.58,0,Math.PI*2);ctx.fill();
+ // hår/hat/hætte
+ ctx.fillStyle=gear==='hood'?'#111820':(gear==='owl'?'#3d352d':(gear==='fox'?'#9b5129':shirt));
+ ctx.beginPath();ctx.arc(px,py-r*.9,r*.64,Math.PI,0);ctx.fill();
+ // øjne
+ ctx.fillStyle='#20231f';ctx.beginPath();ctx.arc(px-r*.2,py-r*.7,r*.055,0,Math.PI*2);ctx.arc(px+r*.2,py-r*.7,r*.055,0,Math.PI*2);ctx.fill();
+ // særlige humanoide accessories
+ ctx.strokeStyle=shirt;ctx.lineWidth=Math.max(2,r*.22);
+ if(gear==='scarf'||gear==='bee'){ctx.fillStyle=gear==='bee'?'#252525':'#d5e2e7';ctx.fillRect(px-r*.72,py-r*.02,r*1.44,r*.22);}
+ if(gear==='bag'){ctx.fillStyle='#463c2b';ctx.fillRect(px-r*.9,py-r*.05,r*.28,r*.7);}
+ if(gear==='lamp'){ctx.fillStyle='#d9b65b';ctx.beginPath();ctx.arc(px+r*.95,py+r*.05,r*.16,0,Math.PI*2);ctx.fill();}
+ if(gear==='mush'){ctx.fillStyle='#b84d43';ctx.beginPath();ctx.arc(px,py-r*1.2,r*.52,Math.PI,0);ctx.fill();}
+ ctx.restore();
+ // Weather from editor settings
+ const particleCount=Math.floor(25+wind*120);
+ for(let i=0;i<particleCount;i++){
+   const seed=i*97.37, phase=(performance.now()/1000)*(0.35+wind*1.7)+seed;
+   let px=((seed*17+phase*(theme==='winter'?35:theme==='autumn'?48:60))%(COLS*s+200))-100;
+   let py=((seed*31+phase*(theme==='winter'?55:theme==='autumn'?22:8))%(ROWS*s+160))-80;
+   if(theme==='winter'){ctx.strokeStyle='rgba(255,255,255,'+(0.25+wind*.55)+')';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(ox+px,oy+py);ctx.lineTo(ox+px+4+wind*12,oy+py+9+wind*15);ctx.stroke();}
+   else if(theme==='autumn'){ctx.fillStyle='rgba(191,116,45,'+(0.35+wind*.55)+')';ctx.beginPath();ctx.ellipse(ox+px,oy+py,3,1.7,.5,0,Math.PI*2);ctx.fill();}
+   else {ctx.strokeStyle='rgba(180,205,185,'+(0.03+wind*.16)+')';ctx.beginPath();ctx.moveTo(ox+px,oy+py);ctx.lineTo(ox+px+10+wind*20,oy+py);ctx.stroke();}
+ }
+ if(dark>0){ctx.fillStyle='rgba(0,0,0,'+(dark*.42)+')';ctx.fillRect(0,0,innerWidth,innerHeight);}
+ // fog overlay
+ if(!fogBright){
+  const g=ctx.createRadialGradient(ox+player.x*s,oy+player.y*s,s*.7,ox+player.x*s,oy+player.y*s,s*5.5);
+  g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.67)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,innerWidth,innerHeight);
+ }
+}
+function loop(t){
+ if(!gameRunning)return;
+ const dt=Math.min(.033,(t-lastTime)/1000);lastTime=t;
+ updatePlayer(dt);updateCatchers(dt);drawGame();requestAnimationFrame(loop);
+}
+
+let joyActive=false;
+const joyEl=document.getElementById('joystick'),stick=document.getElementById('stick');
+function joyMove(e){
+ const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+ let dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.35,d=Math.hypot(dx,dy);
+ if(d>max){dx=dx/d*max;dy=dy/d*max}
+ joy.x=dx/max;joy.y=dy/max;stick.style.transform='translate('+dx+'px,'+dy+'px)';
+}
+joyEl.addEventListener('pointerdown',e=>{joyActive=true;joyEl.setPointerCapture(e.pointerId);joyMove(e)});
+joyEl.addEventListener('pointermove',e=>{if(joyActive)joyMove(e)});
+joyEl.addEventListener('pointerup',()=>{joyActive=false;joy.x=joy.y=0;stick.style.transform='translate(0,0)'});
+const boostBtn=document.getElementById('boost');
+boostBtn.onpointerdown=()=>{if(energy>1)boost=true};boostBtn.onpointerup=()=>boost=false;boostBtn.onpointercancel=()=>boost=false;
+const pcKeys={up:false,down:false,left:false,right:false};
+function keyName(k){k=String(k).toLowerCase();if(k==='arrowup'||k==='w')return'up';if(k==='arrowdown'||k==='s')return'down';if(k==='arrowleft'||k==='a')return'left';if(k==='arrowright'||k==='d')return'right';return null}
+addEventListener('keydown',e=>{
+ const k=keyName(e.key);
+ if(k){pcKeys[k]=true;e.preventDefault();}
+ if(e.key==='Shift')boost=true;
+});
+addEventListener('keyup',e=>{
+ const k=keyName(e.key);if(k){pcKeys[k]=false;e.preventDefault();}
+ if(e.key==='Shift')boost=false;
+});
+function updatePCControl(dt){
+ const coarse=window.matchMedia?.('(hover:none) and (pointer:coarse)').matches;
+ if(coarse)return;
+ let tx=(pcKeys.right?1:0)-(pcKeys.left?1:0),ty=(pcKeys.down?1:0)-(pcKeys.up?1:0);
+ const l=Math.hypot(tx,ty);if(l){tx/=l;ty/=l;}
+ const a=1-Math.exp(-dt*14);
+ joy.x+=(tx-joy.x)*a;joy.y+=(ty-joy.y)*a;
+ if(!l && Math.hypot(joy.x,joy.y)<.015){joy.x=0;joy.y=0;}
+}
+
+
+function fullscreen(){document.documentElement.requestFullscreen?.()}
+function toggleBrightness(){
+  fogBright=!fogBright;
+  document.body.classList.toggle('brightForest',fogBright);
+  if(gameRunning) drawGame();
+}
+function setSkin(type){playerSkin=type;localStorage.setItem('skovhejkSkin',type);document.querySelectorAll('.skinIcon').forEach(b=>b.classList.toggle('selected',b.dataset.skin===type));const names={ranger:'SKOVVOGTER',hood:'NATTEHÆTTE',scout:'OPDAGER',rain:'REGNDRAGT',ghost:'TÅGEVANDRER',hiker:'VANDRER',lantern:'LYGTEVAGT',mushroom:'SVAMPESPEJDER',fox:'RÆV',owl:'UGLE',bee:'SKOVBI',fisher:'SØFANGER',explorer:'OPDAGEREN',winter:'VINTERVANDRER',autumn:'EFTERÅRSVANDRER'};const el=document.getElementById('selectedSkinName');if(el)el.textContent=names[type]||type;}
+
+function cloneEditorMap(m){return JSON.parse(JSON.stringify(m))}
+function resetEditorHistory(){editorUndo=[];editorRedo=[];editorStrokeSaved=false;updateHistoryButtons()}
+function saveEditorHistory(){
+ if(!editorMap)return;
+ editorUndo.push(cloneEditorMap(editorMap));
+ if(editorUndo.length>60)editorUndo.shift();
+ editorRedo=[];
+ editorStrokeSaved=true;
+ updateHistoryButtons();
+}
+function updateHistoryButtons(){
+ const u=document.getElementById('undoBtn'),r=document.getElementById('redoBtn');
+ if(u)u.disabled=!editorUndo.length;
+ if(r)r.disabled=!editorRedo.length;
+}
+function undoEditor(){
+ if(!editorMap||!editorUndo.length)return;
+ editorRedo.push(cloneEditorMap(editorMap));
+ editorMap=editorUndo.pop();
+ editorStrokeSaved=false; drawEditor(); updateHistoryButtons();
+}
+function redoEditor(){
+ if(!editorMap||!editorRedo.length)return;
+ editorUndo.push(cloneEditorMap(editorMap));
+ editorMap=editorRedo.pop();
+ editorStrokeSaved=false; drawEditor(); updateHistoryButtons();
+}
+
+function openEditor(){
+ const chooser=document.getElementById('editorChooser');
+ const grid=document.getElementById('editorChooserGrid');
+ if(!chooser||!grid){openEditorForMap(null);return;}
+ grid.innerHTML='';
+ const fresh=document.createElement('button');fresh.type='button';fresh.className='editorChoice new';
+fresh.innerHTML='<strong>＋ NY BANE</strong><small>Start med et tomt kort.</small>';
+fresh.onclick=()=>{chooser.classList.remove('active');chooser.setAttribute('aria-hidden','true');openEditorForMap(null)};grid.appendChild(fresh);
+ const maps=[...serverMaps,...getSavedPublishedMaps()].filter(m=>m&&!m.official);
+ const seen=new Set();
+ maps.filter(m=>{if(seen.has(m.id))return false;seen.add(m.id);return true}).forEach(m=>{
+  const b=document.createElement('button');b.type='button';b.className='editorChoice';
+  b.innerHTML='<strong>'+escapeHtml(m.name||'Min Skovbane')+'</strong><small>'+escapeHtml(m.creator||'Lokalt')+' · '+(m.posters?.length||0)+' poster · '+(m.catchers?.length||0)+' fanger</small>';
+  b.onclick=()=>{chooser.classList.remove('active');chooser.setAttribute('aria-hidden','true');openEditorForMap(m)};grid.appendChild(b);
+ });
+ chooser.classList.add('active');chooser.setAttribute('aria-hidden','false');
+}
+function openEditorForMap(map){
+ editorMap=map?cloneEditorMap(map):blankMap('Min Skovbane');
+ editorMap.start=editorMap.start||{x:2,y:2};
+ editorTheme=editorMap.theme||'normal';editorWind=editorMap.wind??50;editorDark=editorMap.darkness??50;
+ editorTool='wall';resetEditorHistory();updateToolButtons();
+ const ew=document.getElementById('editorWind'),ed=document.getElementById('editorDark');if(ew)ew.value=editorWind;if(ed)ed.value=editorDark;syncEditorSettings();
+ const title=document.getElementById('editorTitle');if(title)title.value=editorMap.name||'Min Skovbane';
+ showScreen('editor');drawEditor();
+}
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{editorTool=b.dataset.tool;updateToolButtons()});
+document.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>{
+ editorTheme=b.dataset.theme;
+ if(editorMap){editorMap.theme=editorTheme;editorMap.wind=editorWind;editorMap.darkness=editorDark;}
+ if(editorTheme!=='normal'&&editorTool==='box')editorTool='wall';
+ updateThemeButtons(); updateToolButtons(); drawEditor();
+});
+function updateThemeButtons(){document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('sel',b.dataset.theme===editorTheme));}
+function toggleEditorSettings(){
+ editorSettingsOpen=!editorSettingsOpen;
+ document.getElementById('editorSettings')?.classList.toggle('hidden',!editorSettingsOpen);
+}
+function syncEditorSettings(){
+ editorWind=+document.getElementById('editorWind')?.value||0;
+ editorDark=+document.getElementById('editorDark')?.value||0;
+ const w=document.getElementById('windValue'),d=document.getElementById('darkValue');
+ if(w)w.textContent=editorWind+'%'; if(d)d.textContent=editorDark+'%';
+ if(editorMap){editorMap.wind=editorWind;editorMap.darkness=editorDark;editorMap.theme=editorTheme;}
+ drawEditor();
+}
+document.getElementById('editorWind')?.addEventListener('input',syncEditorSettings);
+document.getElementById('editorDark')?.addEventListener('input',syncEditorSettings);
+
+function updateToolButtons(){document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('sel',b.dataset.tool===editorTool)); updateThemeButtons()}
+function editorPos(e){
+ const r=ecanvas.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/(r.width/COLS)),y=Math.floor((e.clientY-r.top)/(r.height/ROWS));return{x,y}
+}
+function removeAt(arr,x,y){for(let i=arr.length-1;i>=0;i--)if(arr[i].x===x&&arr[i].y===y)arr.splice(i,1)}
+function editorPaint(e){
+ if(!editorMap)return;let p=editorPos(e),x=p.x,y=p.y;if(x<0||y<0||x>=COLS||y>=ROWS)return;
+ const a=editorMap;
+ if(editorTool==='wall'){removeAt(a.walls,x,y);a.walls.push({x,y,style:'wood'})}
+ if(editorTool==='stonewall'){removeAt(a.walls,x,y);a.walls.push({x,y,style:'stone'})}
+ if(editorTool==='floor'){removeAt(a.walls,x,y)}
+ if(editorTool==='poster'){if(a.posters.length<5&&!a.posters.some(q=>q.x===x&&q.y===y))a.posters.push({x,y});}
+ if(editorTool==='catcher'&&!a.catchers.some(q=>q.x===x&&q.y===y))a.catchers.push({x,y});
+ if(editorTool==='start')a.start={x,y};
+ if(editorTool==='tree'&&!a.trees.some(q=>q.x===x&&q.y===y))a.trees.push({x,y});
+ if(editorTool==='box'&&!a.boxes.some(q=>q.x===x&&q.y===y))a.boxes.push({x,y});
+ if(editorTool==='lamp'&&!a.lamps.some(q=>q.x===x&&q.y===y))a.lamps.push({x,y});
+ if(editorTool==='fog')a.fog.push({x,y,r:3});
+ if(editorTool==='snow'){a.winter=a.winter||[];a.winter.push({x,y,type:'snow'})}
+ if(editorTool==='ice'){a.winter=a.winter||[];a.winter.push({x,y,type:'ice'})}
+ if(editorTool==='leaves'){a.autumn=a.autumn||[];a.autumn.push({x,y,type:'leaves'})}
+ if(editorTool==='mushroom'){a.autumn=a.autumn||[];a.autumn.push({x,y,type:'mushroom'})}
+ if(editorTool==='deadTree'){a.dead=a.dead||[];a.dead.push({x,y,type:'tree'})}
+ if(editorTool==='deadBush'){a.dead=a.dead||[];a.dead.push({x,y,type:'bush'})}
+ if(editorTool==='erase'){[a.walls,a.posters,a.catchers,a.trees,a.boxes,a.lamps,a.fog,a.autumn||[],a.winter||[],a.dead||[]].forEach(ar=>removeAt(ar,x,y));}
+ drawEditor();
+}
+let edDown=false;ecanvas.addEventListener('pointerdown',e=>{edDown=true;editorStrokeSaved=false;saveEditorHistory();editorPaint(e);ecanvas.setPointerCapture(e.pointerId)});
+ecanvas.addEventListener('pointermove',e=>{if(edDown)editorPaint(e)});ecanvas.addEventListener('pointerup',()=>edDown=false);
+function drawEditor(){
+ const w=ecanvas.clientWidth,h=ecanvas.clientHeight,s=Math.min(w/COLS,h/ROWS),ox=(w-COLS*s)/2,oy=(h-ROWS*s)/2;
+ ectx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);ectx.clearRect(0,0,w,h);
+ const bg=editorTheme==='winter'?'#9db7c4':editorTheme==='autumn'?'#6b4b32':editorTheme==='dead'?'#34322f':'#142018';
+ ectx.fillStyle=bg;ectx.fillRect(0,0,w,h);
+ const ground=editorTheme==='winter'?'#dbe8eb':editorTheme==='autumn'?'#7d5738':editorTheme==='dead'?'#46413b':'#1b2b1d';
+ ectx.fillStyle=ground;ectx.fillRect(ox,oy,COLS*s,ROWS*s);
+ for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){ectx.strokeStyle=editorTheme==='winter'?'rgba(70,95,105,.22)':editorTheme==='autumn'?'rgba(60,35,20,.28)':editorTheme==='dead'?'rgba(20,20,20,.3)':'#263729';ectx.strokeRect(ox+x*s,oy+y*s,s,s)}
+ editorMap.walls.forEach(q=>{ ectx.fillStyle=editorTheme==='winter'?(q.style==='stone'?'#71808a':'#49606a'):editorTheme==='autumn'?(q.style==='stone'?'#665447':'#65452f'):editorTheme==='dead'?(q.style==='stone'?'#4b4742':'#3d3935'):(q.style==='stone'?'#62665d':'#3a4d3b'); ectx.fillRect(ox+q.x*s,oy+q.y*s,s,s); if(q.style==='stone'){ ectx.strokeStyle='#8a8d82';ectx.lineWidth=2;ectx.strokeRect(ox+q.x*s+2,oy+q.y*s+2,s-4,s-4); } });
+ editorMap.trees.forEach(q=>{
+  ectx.fillStyle='#31502d';ectx.beginPath();ectx.arc(ox+(q.x+.38)*s,oy+(q.y+.5)*s,s*.28,0,7);ectx.fill();
+  ectx.fillStyle='#3e6235';ectx.beginPath();ectx.arc(ox+(q.x+.62)*s,oy+(q.y+.45)*s,s*.24,0,7);ectx.fill();
+});
+ editorMap.boxes.forEach(q=>{ectx.fillStyle='#775b39';ectx.fillRect(ox+q.x*s+4,oy+q.y*s+4,s-8,s-8)});
+ if(editorTheme==='winter'){
+   editorMap.trees.forEach(q=>{ectx.fillStyle='#dce8ed';ectx.beginPath();ectx.arc(ox+(q.x+.38)*s,oy+(q.y+.5)*s,s*.29,0,7);ectx.fill();ectx.fillStyle='#aebfc7';ectx.beginPath();ectx.arc(ox+(q.x+.62)*s,oy+(q.y+.45)*s,s*.24,0,7);ectx.fill()});
+ } else if(editorTheme==='autumn'){
+   editorMap.trees.forEach(q=>{ectx.fillStyle='#8a5a32';ectx.beginPath();ectx.arc(ox+(q.x+.38)*s,oy+(q.y+.5)*s,s*.29,0,7);ectx.fill();ectx.fillStyle='#a76d38';ectx.beginPath();ectx.arc(ox+(q.x+.62)*s,oy+(q.y+.45)*s,s*.24,0,7);ectx.fill()});
+ } else if(editorTheme==='dead'){
+   editorMap.trees.forEach(q=>{ectx.strokeStyle='#51443a';ectx.lineWidth=Math.max(2,s*.07);ectx.beginPath();ectx.moveTo(ox+(q.x+.5)*s,oy+(q.y+.82)*s);ectx.lineTo(ox+(q.x+.5)*s,oy+(q.y+.18)*s);ectx.moveTo(ox+(q.x+.5)*s,oy+(q.y+.46)*s);ectx.lineTo(ox+(q.x+.25)*s,oy+(q.y+.28)*s);ectx.moveTo(ox+(q.x+.5)*s,oy+(q.y+.52)*s);ectx.lineTo(ox+(q.x+.75)*s,oy+(q.y+.32)*s);ectx.stroke()});
+ }
+ editorMap.lamps.forEach(q=>{ectx.fillStyle=editorTheme==='winter'?'#d9f2ff':editorTheme==='autumn'?'#e1a34f':editorTheme==='dead'?'#a69a89':'#d3d177';ectx.beginPath();ectx.arc(ox+(q.x+.5)*s,oy+(q.y+.5)*s,s*.12,0,7);ectx.fill()});
+ editorMap.fog.forEach(q=>{ectx.fillStyle='rgba(190,210,190,.12)';ectx.beginPath();ectx.arc(ox+(q.x+.5)*s,oy+(q.y+.5)*s,s*q.r,0,7);ectx.fill()});
+  (editorMap.autumn||[]).forEach(q=>{
+   ectx.fillStyle=q.type==='mushroom'?'#a45c38':'#b06d35';ectx.beginPath();ectx.arc(ox+(q.x+.5)*s,oy+(q.y+.5)*s,s*.12,0,7);ectx.fill();
+   if(q.type==='leaves'){ectx.fillStyle='#c08a3c';ectx.fillRect(ox+(q.x+.25)*s,oy+(q.y+.25)*s,s*.12,s*.08);}
+ });
+ (editorMap.winter||[]).forEach(q=>{
+   if(q.type==='ice'){ectx.fillStyle='#9fc8d5';ectx.fillRect(ox+q.x*s+3,oy+q.y*s+3,s-6,s-6);}
+   else {ectx.fillStyle='#e8f4f7';ectx.beginPath();ectx.arc(ox+(q.x+.5)*s,oy+(q.y+.5)*s,s*.25,0,7);ectx.fill();}
+ });
+ (editorMap.dead||[]).forEach(q=>{
+   ectx.strokeStyle='#5b4638';ectx.lineWidth=Math.max(2,s*.07);
+   if(q.type==='tree'){ectx.beginPath();ectx.moveTo(ox+(q.x+.5)*s,oy+(q.y+.8)*s);ectx.lineTo(ox+(q.x+.5)*s,oy+(q.y+.2)*s);ectx.moveTo(ox+(q.x+.5)*s,oy+(q.y+.45)*s);ectx.lineTo(ox+(q.x+.25)*s,oy+(q.y+.28)*s);ectx.moveTo(ox+(q.x+.5)*s,oy+(q.y+.52)*s);ectx.lineTo(ox+(q.x+.75)*s,oy+(q.y+.32)*s);ectx.stroke();}
+   else {ectx.fillStyle='#514238';ectx.beginPath();ectx.ellipse(ox+(q.x+.5)*s,oy+(q.y+.62)*s,s*.28,s*.15,0,0,7);ectx.fill();ectx.strokeStyle='#765848';ectx.beginPath();ectx.moveTo(ox+(q.x+.3)*s,oy+(q.y+.55)*s);ectx.lineTo(ox+(q.x+.42)*s,oy+(q.y+.35)*s);ectx.moveTo(ox+(q.x+.7)*s,oy+(q.y+.55)*s);ectx.lineTo(ox+(q.x+.62)*s,oy+(q.y+.37)*s);ectx.stroke();}
+ });
+ editorMap.posters.forEach((q,i)=>{ectx.fillStyle=editorTheme==='winter'?'#d9eef2':editorTheme==='autumn'?'#c88a3d':editorTheme==='dead'?'#8d8176':'#d7c862';ectx.beginPath();ectx.arc(ox+(q.x+.5)*s,oy+(q.y+.5)*s,s*.25,0,7);ectx.fill();ectx.fillStyle='#172015';ectx.textAlign='center';ectx.textBaseline='middle';ectx.fillText(i+1,ox+(q.x+.5)*s,oy+(q.y+.5)*s)});
+ editorMap.catchers.forEach(q=>{ectx.fillStyle=editorTheme==='winter'?'#aabfc8':editorTheme==='autumn'?'#8d6b4c':editorTheme==='dead'?'#69645f':'#879888';ectx.beginPath();ectx.arc(ox+(q.x+.5)*s,oy+(q.y+.5)*s,s*.27,0,7);ectx.fill()});
+ // Vejr i selve editor-previewet. Styrken følger Level Settings.
+ const wind=editorWind/100, dark=editorDark/100;
+ if(wind>0){
+   const count=Math.floor(18+wind*55);
+   for(let i=0;i<count;i++){
+     const px=((i*97 + editorWeatherT*(18+wind*80))%(w+80))-40;
+     const py=((i*53 + editorWeatherT*(8+wind*22))%(h+40))-20;
+     if(editorTheme==='winter'){ectx.strokeStyle='rgba(255,255,255,'+(0.18+wind*.55)+')';ectx.lineWidth=1.5;ectx.beginPath();ectx.moveTo(px,py);ectx.lineTo(px+2+wind*5,py+4+wind*7);ectx.stroke();}
+     else if(editorTheme==='autumn'){ectx.fillStyle='rgba(205,135,55,'+(0.25+wind*.65)+')';ectx.beginPath();ectx.ellipse(px,py,2.5,1.5,.5,0,7);ectx.fill();}
+     else {ectx.strokeStyle='rgba(180,205,185,'+(0.05+wind*.18)+')';ectx.beginPath();ectx.moveTo(px,py);ectx.lineTo(px+8+wind*18,py);ectx.stroke();}
+   }
+ }
+ if(dark>0){ectx.fillStyle='rgba(0,0,0,'+(dark*.48)+')';ectx.fillRect(ox,oy,COLS*s,ROWS*s);}
+ ectx.strokeStyle='#b6d0a5';ectx.beginPath();ectx.arc(ox+(editorMap.start.x+.5)*s,oy+(editorMap.start.y+.5)*s,s*.3,0,7);ectx.stroke();
+}
+function animateEditorWeather(ts){
+ editorWeatherT=ts/1000;
+ if(document.getElementById('editor')?.classList.contains('active')||document.getElementById('editor')?.classList.contains('show')) drawEditor();
+ editorWeatherRAF=requestAnimationFrame(animateEditorWeather);
+}
+if(!editorWeatherRAF)editorWeatherRAF=requestAnimationFrame(animateEditorWeather);
+function clearEditor(){
+ if(editorMap)saveEditorHistory();
+ editorMap=blankMap('Min Skovbane');
+ editorMap.start={x:2,y:2};editorTheme='normal';editorWind=50;editorDark=50;
+ const ew=document.getElementById('editorWind'),ed=document.getElementById('editorDark');if(ew)ew.value=50;if(ed)ed.value=50;updateThemeButtons();updateToolButtons();
+ const title=document.getElementById('editorTitle');if(title)title.value='Min Skovbane';
+ drawEditor();
+}
+async function publishEditor(){
+  await saveEditor();
+}
+
+async function saveEditor(){
+ if(!editorMap.posters.length){alert('Sæt mindst én poster på banen.');return}
+ editorMap.name=(document.getElementById('editorTitle')?.value||'Min Skovbane').trim()||'Min Skovbane';
+ if(currentUser){
+  try{const data=await api('/api/maps',{method:'POST',body:JSON.stringify({map:editorMap})});
+   editorMap=data.map;
+   serverMaps=[...serverMaps.filter(m=>m.id!==editorMap.id),editorMap];
+   alert('Bane published og gemt. Den kan nu findes under ALLE BANER.');showScreen('community');renderMaps();return;
+  }catch(e){alert(e.message);return}
+ }
+ let arr=[];try{arr=JSON.parse(localStorage.getItem('skovhejkMaps')||'[]')}catch(e){}
+ alert('Du skal være logget ind for at publicere en bane, så andre devices kan se den.');showScreen('account');
+}
+
+async function loginAccount(){
+ const username=document.getElementById('loginUsername').value.trim(),password=document.getElementById('loginPassword').value;
+ try{const d=await api('/api/login',{method:'POST',body:JSON.stringify({username,password})});apiToken=d.token;localStorage.setItem('skovhejkToken',apiToken);currentUser=d.user;updateAccountUI();document.getElementById('accountError').textContent='Logget ind.';await refreshServerData()}catch(e){document.getElementById('accountError').textContent=e.message}
+}
+async function registerAccount(){
+ const username=document.getElementById('registerUsername').value.trim(),password=document.getElementById('registerPassword').value;
+ try{const d=await api('/api/register',{method:'POST',body:JSON.stringify({username,password})});apiToken=d.token;localStorage.setItem('skovhejkToken',apiToken);currentUser=d.user;updateAccountUI();document.getElementById('accountError').textContent='Account oprettet.';await refreshServerData()}catch(e){document.getElementById('accountError').textContent=e.message}
+}
+async function logoutAccount(){try{await api('/api/logout',{method:'POST'})}catch(e){}apiToken='';currentUser=null;localStorage.removeItem('skovhejkToken');updateAccountUI()}
+function updateAccountUI(){
+ const out=document.getElementById('accountLoggedOut'),inn=document.getElementById('accountLoggedIn');if(!out||!inn)return;
+ out.style.display=currentUser?'none':'flex';inn.style.display=currentUser?'flex':'none';
+ if(currentUser){document.getElementById('accountName').textContent='@'+currentUser.username+(currentUser.username==='DaDev'?' · ADMIN':'');document.getElementById('accountStats').textContent='Creator points: '+(currentUser.creatorPoints||0)+' · Gennemførte baner: '+(currentUser.completedCount||0)}
+}
+async function renderLeaderboard(){
+ const box=document.getElementById('leaderboardCards');if(!box)return;box.innerHTML='<div class="card"><p>Henter leaderboard...</p></div>';
+ try{const d=await api('/api/leaderboard');box.innerHTML='';(d.leaderboard||[]).forEach((u,i)=>{const c=document.createElement('div');c.className='card';c.innerHTML='<h3>#'+(i+1)+' · '+escapeHtml(u.username)+'</h3><p>🏁 '+u.completedCount+' gennemførte officielle/verificerede baner</p><p>⭐ '+u.creatorPoints+' creator points</p>';box.appendChild(c)});if(!d.leaderboard?.length)box.innerHTML='<div class="card"><p>Ingen accounts endnu.</p></div>';}catch(e){box.innerHTML='<div class="card"><p>Leaderboard kræver, at serveren kører.</p></div>'}
+}
+document.getElementById('loginBtn').onclick=loginAccount;
+document.getElementById('registerBtn').onclick=registerAccount;
+document.getElementById('logoutBtn').onclick=logoutAccount;
+['loginUsername','loginPassword'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')loginAccount()}));
+['registerUsername','registerPassword'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')registerAccount()}));
+if(fogBright)document.body.classList.add('brightForest');
+const brightBtn=document.getElementById('brightnessBtn');if(brightBtn)brightBtn.textContent=fogBright?'MØRKN SKOVEN':'LYS SKOVEN';
+updateAccountUI();
+refreshServerData();
+
+</script>
+</body>
+</html>
