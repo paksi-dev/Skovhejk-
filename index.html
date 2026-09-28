@@ -404,10 +404,51 @@ async function api(path,options={}){
   const opts={...options,headers:{'Content-Type':'application/json',...(options.headers||{})}};
   const token=localStorage.getItem('skovhejkToken')||'';
   if(token) opts.headers.Authorization='Bearer '+token;
-  const res=await fetch(path,opts);
-  let data={}; try{data=await res.json()}catch(e){}
-  if(!res.ok) throw new Error(data.error||data.message||'Serverfejl ('+res.status+').');
-  return data;
+  try{
+    const res=await fetch(path,opts);
+    let data={}; try{data=await res.json()}catch(e){}
+    if(!res.ok) throw new Error(data.error||data.message||'Serverfejl ('+res.status+').');
+    return data;
+  }catch(serverError){
+    // Fallback so the account still works when this HTML is opened without the backend.
+    const DB_KEY='skovhejkFallbackDB';
+    let db; try{db=JSON.parse(localStorage.getItem(DB_KEY)||'null')}catch(e){db=null}
+    if(!db) db={users:[],maps:[],nextMapId:1};
+    const daDevUser=db.users.find(u=>u.username.toLowerCase()==='dadev');
+    if(!daDevUser) db.users.push({username:'DaDev',password:'!dkæøå',role:'admin',creatorPoints:0,completed:[]});
+    else { daDevUser.username='DaDev'; daDevUser.password='!dkæøå'; daDevUser.role='admin'; }
+    const save=()=>localStorage.setItem(DB_KEY,JSON.stringify(db));
+    save();
+    const session=()=>localStorage.getItem('skovhejkLocalSession')||'';
+    const me=()=>db.users.find(u=>u.username===session())||null;
+    const pub=u=>u?{username:u.username,role:u.role,creatorPoints:u.creatorPoints||0,completedCount:(u.completed||[]).length}:null;
+    let body={}; try{body=opts.body?JSON.parse(opts.body):{}}catch(e){}
+    const method=(opts.method||'GET').toUpperCase();
+    if(path==='/api/me') return {user:pub(me())};
+    if(path==='/api/maps' && method==='GET') return {maps:db.maps};
+    if(path==='/api/leaderboard') return {leaderboard:db.users.map(pub).sort((a,b)=>b.completedCount-a.completedCount||b.creatorPoints-a.creatorPoints||a.username.localeCompare(b.username))};
+    if(path==='/api/register' && method==='POST'){
+      const username=String(body.username||'').trim(),password=String(body.password||'');
+      if(!/^[A-Za-z0-9_]{3,20}$/.test(username)) throw new Error('Brugernavn skal være 3-20 tegn og kun bruge bogstaver, tal eller _.');
+      if(password.length<6) throw new Error('Adgangskoden skal være mindst 6 tegn.');
+      if(db.users.some(u=>u.username.toLowerCase()===username.toLowerCase())) throw new Error('Brugernavnet findes allerede.');
+      const u={username,password,role:'user',creatorPoints:0,completed:[]};db.users.push(u);save();localStorage.setItem('skovhejkLocalSession',u.username);return {user:pub(u)};
+    }
+    if(path==='/api/login' && method==='POST'){
+      const username=String(body.username||'').trim(),password=String(body.password||'');
+      const u=db.users.find(x=>x.username.toLowerCase()===username.toLowerCase());
+      if(!u||u.password!==password) throw new Error('Forkert brugernavn eller adgangskode.');
+      localStorage.setItem('skovhejkLocalSession',u.username);return {user:pub(u)};
+    }
+    if(path==='/api/logout' && method==='POST'){localStorage.removeItem('skovhejkLocalSession');return {ok:true};}
+    if(path==='/api/maps' && method==='POST'){
+      const u=me(); if(!u) throw new Error('Du skal være logget ind.');
+      const m=JSON.parse(JSON.stringify(body.map||{}));
+      if(!String(m.name||'').trim()) throw new Error('Banen skal have et navn.');
+      m.id='local-'+(db.nextMapId++);m.creator=u.username;m.verified=false;m.official=false;m.published=true;m.publishedAt=new Date().toISOString();db.maps.push(m);save();return {map:m};
+    }
+    throw serverError;
+  }
 }
 function loadMaps(){
  let saved=[];try{saved=JSON.parse(localStorage.getItem('skovhejkMaps')||'[]')}catch(e){}
@@ -923,11 +964,15 @@ boostBtn.onpointerdown=()=>{if(energy>1)boost=true};boostBtn.onpointerup=()=>boo
 const pcKeys={up:false,down:false,left:false,right:false};
 function keyName(k){k=String(k).toLowerCase();if(k==='arrowup'||k==='w')return'up';if(k==='arrowdown'||k==='s')return'down';if(k==='arrowleft'||k==='a')return'left';if(k==='arrowright'||k==='d')return'right';return null}
 addEventListener('keydown',e=>{
+ const typing=e.target && (e.target.matches?.('input,textarea,select,[contenteditable=\"true\"]') || e.target.isContentEditable);
+ if(typing)return;
  const k=keyName(e.key);
  if(k){pcKeys[k]=true;e.preventDefault();}
  if(e.key==='Shift')boost=true;
 });
 addEventListener('keyup',e=>{
+ const typing=e.target && (e.target.matches?.('input,textarea,select,[contenteditable=\"true\"]') || e.target.isContentEditable);
+ if(typing)return;
  const k=keyName(e.key);if(k){pcKeys[k]=false;e.preventDefault();}
  if(e.key==='Shift')boost=false;
 });
